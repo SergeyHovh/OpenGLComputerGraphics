@@ -1,8 +1,10 @@
 #include <iostream>
-using namespace std;
+#include "glew.h"
+#include "glfw3.h"
 
-int main() 
+
+int main()
 {
-	cout << "hello world" << endl;
+	std::cout << "hello world";
 	return 0;
 }
