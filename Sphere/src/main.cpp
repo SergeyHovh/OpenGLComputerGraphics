@@ -2,7 +2,47 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
 
+struct Shader
+{
+	const std::string vertexShader;
+	const std::string fragmentShader;
+};
+
+/*reads shader from a file*/
+static Shader ReadShader(const std::string filepath)
+{
+	enum class SHADER
+	{
+		NONE = -1, VERTEX = 0, FRAGMENT = 1
+	};
+
+	std::ifstream stream(filepath);
+	std::stringstream ss[2];
+	std::string line;
+	SHADER type = SHADER::NONE;
+	while (getline(stream, line))
+	{
+		if (line.find("#shader") != std::string::npos)
+		{
+			if (line.find("vertex") != std::string::npos)
+				type = SHADER::VERTEX;
+			else if (line.find("fragment") != std::string::npos)
+				type = SHADER::FRAGMENT;
+		}
+		else
+		{
+			ss[(int)type] << line << '\n';
+		}
+	}
+
+	return{ ss[0].str(), ss[1].str() };
+}
+
+/*compiles the given shader*/
 static unsigned int CompileShader(unsigned int type, const std::string& source)
 {
 	unsigned int id = glCreateShader(type);
@@ -12,6 +52,7 @@ static unsigned int CompileShader(unsigned int type, const std::string& source)
 	return id;
 }
 
+/*creates shader program, that consists of vertex and fragment shaders*/
 static unsigned int CreateShader(const std::string& vertexShader, const std::string& fragmentShader)
 {
 	unsigned int program = glCreateProgram();
@@ -69,28 +110,9 @@ int main(void)
 	glEnableVertexAttribArray(0);
 
 	// shader
-
-	std::string vSh =
-		"#version 330 core\n"
-		"\n"
-		"layout(location = 0) in vec4 position;\n"
-		"void main()\n"
-		"{\n"
-		"	gl_Position = position;\n"
-		"}\n"
-		;
-
-	std::string fSh =
-		"#version 330 core\n"
-		"\n"
-		"layout(location = 0) out vec4 color;\n"
-		"void main()\n"
-		"{\n"
-		"	color = vec4(0.5, 0.25, 0.1, 1.0);\n"
-		"}\n"
-		;
-	unsigned int shader = CreateShader(vSh, fSh);
-	glUseProgram(shader);
+	Shader shader = ReadShader("res/shaders/basicShader.shader");
+	unsigned int program = CreateShader(shader.vertexShader, shader.fragmentShader);
+	glUseProgram(program);
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
@@ -107,7 +129,7 @@ int main(void)
 		glfwPollEvents();
 	}
 
-	glDeleteProgram(shader);
+	glDeleteProgram(program);
 
 	glfwTerminate();
 	return 0;
