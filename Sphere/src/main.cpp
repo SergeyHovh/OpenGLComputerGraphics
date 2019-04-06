@@ -80,7 +80,7 @@ int main(void)
 
 
 	/* Create a windowed mode window and its OpenGL context */
-	window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+	window = glfwCreateWindow(500, 500, "Hello World", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
@@ -95,16 +95,30 @@ int main(void)
 
 	float positions[]
 	{
-		-0.5f, -0.5f,
-		 0.0f,  0.5f,
-		 0.5f, -0.5f
+		-0.5f, -0.5f, // 0
+		 0.5f, -0.5f, // 1
+		 0.5f,  0.5f, // 2
+		-0.5f,  0.5f  // 3
 	};
 
-	// bind the buffer
+	unsigned int indecies[]
+	{
+		0, 1, 2,
+		2, 3, 0
+	};
+
+	// bind the vertex buffer
 	unsigned int buffer;
 	glGenBuffers(1, &buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, buffer);
-	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), positions, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), positions, GL_STATIC_DRAW);
+
+	// bind the index buffer
+	unsigned int indexBufferObject;
+	glGenBuffers(1, &indexBufferObject);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferObject);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indecies, GL_STATIC_DRAW);
+	
 	// setup layout
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
 	glEnableVertexAttribArray(0);
@@ -113,14 +127,14 @@ int main(void)
 	Shader shader = ReadShader("res/shaders/basicShader.shader");
 	unsigned int program = CreateShader(shader.vertexShader, shader.fragmentShader);
 	glUseProgram(program);
+	
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
 		/* Render here */
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
