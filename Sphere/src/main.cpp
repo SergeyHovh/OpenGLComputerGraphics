@@ -89,6 +89,7 @@ int main(void)
 
 	/* Make the window's context current */
 	glfwMakeContextCurrent(window);
+	glfwSwapInterval(1);
 
 	if (glewInit() != GLEW_OK)
 		std::cout << "something went wrong :(" << std::endl;
@@ -98,26 +99,33 @@ int main(void)
 		-0.5f, -0.5f, // 0
 		 0.5f, -0.5f, // 1
 		 0.5f,  0.5f, // 2
-		-0.5f,  0.5f  // 3
+		-0.5f,  0.5f, // 3
+		 0.0f,  0.8f  // 4
 	};
 
 	unsigned int indecies[]
 	{
 		0, 1, 2,
-		2, 3, 0
+		2, 3, 0,
+		2, 4, 3
 	};
+
+	int numberOfIndecies = 3 * 3;
+	int numberOfVertecies = 5;
+	int numberOfAttributes = 2;
+	int sizeOfTheArray = numberOfAttributes * numberOfVertecies;
 
 	// bind the vertex buffer
 	unsigned int buffer;
 	glGenBuffers(1, &buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, buffer);
-	glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), positions, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeOfTheArray * sizeof(float), positions, GL_STATIC_DRAW);
 
 	// bind the index buffer
 	unsigned int indexBufferObject;
 	glGenBuffers(1, &indexBufferObject);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferObject);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indecies, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, numberOfIndecies * sizeof(unsigned int), indecies, GL_STATIC_DRAW);
 	
 	// setup layout
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
@@ -127,14 +135,27 @@ int main(void)
 	Shader shader = ReadShader("res/shaders/basicShader.shader");
 	unsigned int program = CreateShader(shader.vertexShader, shader.fragmentShader);
 	glUseProgram(program);
-	
+
+	int location = glGetUniformLocation(program, "u_Color");
+	float r = 0.0, g = 0.5, b = 0.8, incR = 0.01, incG = incR, incB = incR;
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
 		/* Render here */
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+		_ASSERT(location != 1);
+		glUniform4f(location, r, g, b, 1.0);
+
+		r += 3 * incR;
+		g += 2 * incG;
+		b += 7 * incB;
+		if (r > 1.0 || r < 0.0) incR *= -1;
+		if (g > 1.0 || g < 0.0) incG *= -1;
+		if (b > 1.0 || b < 0.0) incB *= -1;
+
+
+		glDrawElements(GL_TRIANGLES, numberOfIndecies, GL_UNSIGNED_INT, nullptr);
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
