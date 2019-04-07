@@ -5,12 +5,56 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <vector>
 
 struct Shader
 {
 	const std::string vertexShader;
 	const std::string fragmentShader;
 };
+
+static unsigned int* stripIndices(unsigned int* indices, const int length, const int rows)
+{
+	const auto size = 2 * length * (rows - 1) + 2 * (rows - 2);
+	auto* result = new unsigned int[(size - 2) * 3];
+	auto c = 0;
+	for (int i = 0; i < size - 2; ++i)
+	{
+		result[c] = indices[i];
+		c++;
+		result[c] = indices[i + 1];
+		c++;
+		result[c] = indices[i + 2];
+		c++;
+	}
+	return result;
+}
+
+static unsigned int* indices(const int length, const int rows)
+{
+	const auto size = 2 * length * (rows - 1) + 2 * (rows - 2);
+	auto* index = new unsigned int[size];
+	auto c = 0;
+	for (int i = 0; i < rows - 1; ++i)
+	{
+		for (int j = 0; j < length; ++j)
+		{
+			auto k = j + i * length + 1;
+			index[c] = k;
+			c++;
+			index[c] = k + length;
+			c++;
+		}
+		if (i != rows - 2)
+		{
+			index[c] = (i + 2) * length;
+			c++;
+			index[c] = (i + 1) * length + 1;
+			c++;
+		}
+	}
+	return index;
+}
 
 /*reads shader from a file*/
 static Shader ReadShader(const std::string filepath)
@@ -72,6 +116,16 @@ static unsigned int CreateShader(const std::string& vertexShader, const std::str
 
 int main(void)
 {
+	const auto length = 5;
+	const auto rows = 3;
+	const auto size = 2 * length * (rows - 1) + 2 * (rows - 2);
+	const auto stripSize = (size - 2) * 3;
+	auto* strip_indices = stripIndices(indices(length, rows), length, rows);
+	for (int i = 0; i < stripSize; ++i)
+	{
+		std::cout << strip_indices[i] << std::endl;
+	}
+
 	GLFWwindow* window;
 
 	/* Initialize the library */
@@ -103,17 +157,17 @@ int main(void)
 		 0.0f,  0.8f  // 4
 	};
 
-	unsigned int indecies[]
+	unsigned int indices[]
 	{
 		0, 1, 2,
 		2, 3, 0,
 		2, 4, 3
 	};
 
-	int numberOfIndecies = 3 * 3;
-	int numberOfVertecies = 5;
-	int numberOfAttributes = 2;
-	int sizeOfTheArray = numberOfAttributes * numberOfVertecies;
+	const int numberOfIndices = 3 * 3;
+	const int numberOfVertices = 5;
+	const int numberOfAttributes = 2;
+	const int sizeOfTheArray = numberOfAttributes * numberOfVertices;
 
 	// bind the vertex buffer
 	unsigned int buffer;
@@ -125,8 +179,8 @@ int main(void)
 	unsigned int indexBufferObject;
 	glGenBuffers(1, &indexBufferObject);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferObject);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, numberOfIndecies * sizeof(unsigned int), indecies, GL_STATIC_DRAW);
-	
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, numberOfIndices * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+
 	// setup layout
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
 	glEnableVertexAttribArray(0);
@@ -155,7 +209,7 @@ int main(void)
 		if (b > 1.0 || b < 0.0) incB *= -1;
 
 
-		glDrawElements(GL_TRIANGLES, numberOfIndecies, GL_UNSIGNED_INT, nullptr);
+		glDrawElements(GL_TRIANGLES, numberOfIndices, GL_UNSIGNED_INT, nullptr);
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
