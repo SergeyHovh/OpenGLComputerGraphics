@@ -6,55 +6,13 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include "Sphere.h"
 
 struct Shader
 {
 	const std::string vertexShader;
 	const std::string fragmentShader;
 };
-
-static unsigned int* stripIndices(unsigned int* indices, const int length, const int rows)
-{
-	const auto size = 2 * length * (rows - 1) + 2 * (rows - 2);
-	auto* result = new unsigned int[(size - 2) * 3];
-	auto c = 0;
-	for (int i = 0; i < size - 2; ++i)
-	{
-		result[c] = indices[i];
-		c++;
-		result[c] = indices[i + 1];
-		c++;
-		result[c] = indices[i + 2];
-		c++;
-	}
-	return result;
-}
-
-static unsigned int* indices(const int length, const int rows)
-{
-	const auto size = 2 * length * (rows - 1) + 2 * (rows - 2);
-	auto* index = new unsigned int[size];
-	auto c = 0;
-	for (int i = 0; i < rows - 1; ++i)
-	{
-		for (int j = 0; j < length; ++j)
-		{
-			auto k = j + i * length + 1;
-			index[c] = k;
-			c++;
-			index[c] = k + length;
-			c++;
-		}
-		if (i != rows - 2)
-		{
-			index[c] = (i + 2) * length;
-			c++;
-			index[c] = (i + 1) * length + 1;
-			c++;
-		}
-	}
-	return index;
-}
 
 /*reads shader from a file*/
 static Shader ReadShader(const std::string filepath)
@@ -116,16 +74,6 @@ static unsigned int CreateShader(const std::string& vertexShader, const std::str
 
 int main(void)
 {
-	const auto length = 5;
-	const auto rows = 3;
-	const auto size = 2 * length * (rows - 1) + 2 * (rows - 2);
-	const auto stripSize = (size - 2) * 3;
-	auto* strip_indices = stripIndices(indices(length, rows), length, rows);
-	for (int i = 0; i < stripSize; ++i)
-	{
-		std::cout << strip_indices[i] << std::endl;
-	}
-
 	GLFWwindow* window;
 
 	/* Initialize the library */
@@ -148,38 +96,44 @@ int main(void)
 	if (glewInit() != GLEW_OK)
 		std::cout << "something went wrong :(" << std::endl;
 
-	float positions[]
-	{
+	float positions[] = {
 		-0.5f, -0.5f, // 0
 		 0.5f, -0.5f, // 1
 		 0.5f,  0.5f, // 2
-		-0.5f,  0.5f, // 3
-		 0.0f,  0.8f  // 4
+		-0.5f,  0.5f  // 3
 	};
 
-	unsigned int indices[]
-	{
+	unsigned int index[] = {
 		0, 1, 2,
-		2, 3, 0,
-		2, 4, 3
+		2, 3, 0
 	};
 
-	const int numberOfIndices = 3 * 3;
-	const int numberOfVertices = 5;
-	const int numberOfAttributes = 2;
-	const int sizeOfTheArray = numberOfAttributes * numberOfVertices;
+	const int stacks = 4, sectors = 2;
+	const int size = 3 * (stacks + 1) * (sectors + 1);
+	float* vertices = new float[size];
+
+	Sphere sphere = Sphere(1.0f, stacks, sectors);
+	sphere.points(vertices);
+
+	for (int i = 0; i < size; i += 3)
+	{
+		std::cout << vertices[i] << " " << vertices[i + 1] << " " << vertices[i + 2] << std::endl;
+	}
+
+	// float* positions = stripVertices(-0.5f, 0.5f, 0.5f, -0.5f, 4, 2);
+	// unsigned int* index = stripIndices(indices(4, 2), 4, 2);
 
 	// bind the vertex buffer
 	unsigned int buffer;
 	glGenBuffers(1, &buffer);
 	glBindBuffer(GL_ARRAY_BUFFER, buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeOfTheArray * sizeof(float), positions, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), positions, GL_STATIC_DRAW);
 
 	// bind the index buffer
 	unsigned int indexBufferObject;
 	glGenBuffers(1, &indexBufferObject);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufferObject);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, numberOfIndices * sizeof(unsigned int), indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 2 * 3 * sizeof(unsigned int), index, GL_STATIC_DRAW);
 
 	// setup layout
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
@@ -191,7 +145,7 @@ int main(void)
 	glUseProgram(program);
 
 	int location = glGetUniformLocation(program, "u_Color");
-	float r = 0.0, g = 0.5, b = 0.8, incR = 0.01, incG = incR, incB = incR;
+	float r = 0.0f, g = 0.5f, b = 0.8f, incR = 0.01f, incG = incR, incB = incR;
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
@@ -209,7 +163,10 @@ int main(void)
 		if (b > 1.0 || b < 0.0) incB *= -1;
 
 
-		glDrawElements(GL_TRIANGLES, numberOfIndices, GL_UNSIGNED_INT, nullptr);
+		// glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+		glDrawElements(GL_TRIANGLE_STRIP, 6, GL_UNSIGNED_INT, nullptr);
+		// glDrawElements(GL_TRIANGLES, numberOfIndices, GL_UNSIGNED_INT, nullptr);
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
