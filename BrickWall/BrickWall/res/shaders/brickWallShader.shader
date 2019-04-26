@@ -27,8 +27,7 @@ void main()
 {
 	int i = int(x / L);
 	int j = int(y / H);
-	// float col = mod(i + j, 2) == 0 ? 0 : 1;
-	float col = sin(i + j) / 3 + 0.5f;
+	float col = sin(i + j) / 6 + 0.5f;
 	if (mod(x, L) < offset || mod(y, H) < offset) color = border_color;
 	else color = vec4(col, 0.0f, 0.0f, 1.0f);
 }

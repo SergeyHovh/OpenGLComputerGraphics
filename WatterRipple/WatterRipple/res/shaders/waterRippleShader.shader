@@ -7,26 +7,37 @@ layout(location = 1) in vec4 aColor;
 out vec4 vertexColor;
 
 uniform float t;
-float x_offset = 0.5f;
-float y_offset = -0.5f;
-float x_center = position.x - x_offset;
-float y_center = position.y - y_offset;
-float dist2 = pow(x_center, 2) + pow(y_center, 2);
-float dist = sqrt(dist2);
-float PI = 3.14159265;
+uniform mat4 view;
+float PI = 3.14159265f;
 
-float sinCol(float omega)
+float r(float x, float y, float z)
 {
-	return (sin(omega*t - 2 * PI*(dist / 2 + dist2)) + 1) / dist2;
+	return pow(position.x - x, 2) + pow(position.y - y, 2) + pow(position.z - z, 2);
+}
+
+float wave(float omega, float amp, float x, float y, float z)
+{
+	float k = 2 * PI;
+	float dist2 = r(x, y, z);
+	float dist = sqrt(dist2);
+	float time = t;
+	return amp * exp(-dist2)*cos(omega*time - k*dist);
 }
 
 void main()
 {
-	gl_Position = position;
-	float red = sinCol(PI / 3);
-	float green = 0.0f;
-	float blue = 0.0f;
-	vertexColor = vec4(red, green, blue, 1.0f);
+	float z_coord = 0.0f
+		//    omega  amp    x      y     z
+		+ wave(1.0f, 1.0f, -0.5f, -0.5f, 0.0f)
+		+ wave(1.0f, 1.0f, 0.5f, 0.5f, 0.0f)
+		+ wave(1.0f, 1.0f, -0.5f, 0.5f, 0.0f)
+		+ wave(1.0f, 1.0f, 0.5f, -0.5f, 0.0f)
+		+ wave(1.0f, 10.0f, 1.0f, 1.0f, 0.0f)
+		;
+	z_coord /= 5;
+	float col = z_coord / 2 + 0.5f;
+	gl_Position = view * vec4(position.x, z_coord, position.y, position.w);
+	vertexColor = vec4(col, col, col, 1.0f);
 }
 
 #shader fragment

@@ -1,6 +1,11 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <glm/vec3.hpp> // glm::vec3
+#include <glm/vec4.hpp> // glm::vec4
+#include <glm/mat4x4.hpp> // glm::mat4
+#include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -15,9 +20,10 @@ struct Shader
 
 void generate_plane(const int cols, const int rows, float* positions, unsigned int* indices)
 {
-	float x_step = 2.0 / (cols - 1);
-	float y_step = 2.0 / (rows - 1);
-	float x = -1.0f, y = 1.0f;
+	float x_lower_left = -10.0f, y_lower_left = -10.0f, x_upper_right = 10.0f, y_upper_right = 10.0f;
+	float x_step = (x_upper_right - x_lower_left) / (cols - 1);
+	float y_step = (y_upper_right - y_lower_left) / (rows - 1);
+	float x = x_lower_left, y = y_upper_right;
 	const float z = 0.0f;
 	// float r = 1.0f, g = 1.0f, b = 0.0f;
 	int count = 0;
@@ -32,13 +38,13 @@ void generate_plane(const int cols, const int rows, float* positions, unsigned i
 			positions[count + 1] = y;
 			positions[count + 2] = z;
 			positions[count + 3] = 0.0f;
-			positions[count + 4] = (z + 1.0) / 2;
+			positions[count + 4] = 0.0f;
 			positions[count + 5] = 0.0f;
 			x += x_step;
 			count += 6;
 		}
 		y -= y_step;
-		x = -1.0f;
+		x = x_lower_left;
 	}
 	// index generation
 	const auto size = 2 * cols * (rows - 1) + 2 * (rows - 2);
@@ -140,9 +146,9 @@ int main(void)
 	/* Initialize the library */
 	if (!glfwInit())
 		return -1;
-
+	const float width = 1360.0f, height = 750.0f;
 	/* Create a windowed mode window and its OpenGL context */
-	window = glfwCreateWindow(500, 500, "Hello World", NULL, NULL);
+	window = glfwCreateWindow(width, height, "Water Ripple Simulation", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
@@ -156,6 +162,10 @@ int main(void)
 	if (glewInit() != GLEW_OK)
 		std::cout << "something went wrong :(" << std::endl;
 
+
+
+
+
 	// start
 	const auto a = 2 << 8;
 	const auto cols = a, rows = a;
@@ -167,7 +177,6 @@ int main(void)
 	auto* ind = new unsigned int[number_of_indices];
 
 	generate_plane(cols, rows, pos, ind);
-
 	// binding
 
 	// bind the vertex buffer
@@ -199,19 +208,33 @@ int main(void)
 	glUseProgram(program);
 
 	unsigned int tLocation = glGetUniformLocation(program, "t");
+	unsigned int viewLocation = glGetUniformLocation(program, "view");
+
 	float t = 0.0f;
+	const float radius = 3;
+	float angle = 0;
+	glm::mat4 perspective = glm::perspective(glm::radians(45.0f), width / height, 0.2f, 100.0f);
+	glm::vec3 up = glm::vec3(0, 1, 0);
+	glm::vec3 center = glm::vec3(0, 0, 0);
+
+
 	// end
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window))
 	{
 		/* Render here */
 		glClear(GL_COLOR_BUFFER_BIT);
-		
+
+		glm::vec3 position = glm::vec3(0, -3, 3);
+		//glm::vec3 position = glm::vec3(radius * sin(angle), -5, radius * cos(angle));
+		glm::mat4 mvp = perspective * glm::lookAt(position, center, up);
+
+
 		glUniform1f(tLocation, t);
-		
-		glDrawElements(GL_TRIANGLE_STRIP, number_of_indices, GL_UNSIGNED_INT, nullptr);
-		
+		glUniformMatrix4fv(viewLocation, 1, GL_FALSE, &mvp[0][0]);
 		t += 0.05f;
+		//angle += 0.02f;
+		glDrawElements(GL_TRIANGLE_STRIP, number_of_indices, GL_UNSIGNED_INT, nullptr);
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);

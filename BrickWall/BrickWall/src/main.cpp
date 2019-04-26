@@ -73,6 +73,14 @@ static unsigned int CreateShader(const std::string& vertexShader, const std::str
 
 int main(void)
 {
+	float length, height, offset;
+	std::cout << "set the length of the brick - [0, 1]" << std::endl;
+	std::cin >> length;
+	std::cout << "set the height of the brick - [0, 1]" << std::endl;
+	std::cin >> height;
+	std::cout << "set the offset of the brick - [0, 1]" << std::endl;
+	std::cin >> offset;
+
 	GLFWwindow* window;
 
 	/* Initialize the library */
@@ -137,10 +145,6 @@ int main(void)
 	unsigned int brick_length_location = glGetUniformLocation(program, "brick_length");
 	unsigned int brick_height_location = glGetUniformLocation(program, "brick_height");
 	unsigned int offset_location = glGetUniformLocation(program, "offset");
-
-	float length = 0.2f;
-	float height = 0.1f;
-	float offset = 0.01f;
 
 	// end
 	/* Loop until the user closes the window */
