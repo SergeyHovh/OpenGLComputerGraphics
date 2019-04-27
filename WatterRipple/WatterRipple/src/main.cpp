@@ -5,6 +5,7 @@
 #include <glm/vec4.hpp> // glm::vec4
 #include <glm/mat4x4.hpp> // glm::mat4
 #include <glm/gtc/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale, glm::perspective
+#include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -37,14 +38,16 @@ void generate_plane(const int cols, const int rows, float* positions, unsigned i
 	{
 		for (int j = 0; j < cols; ++j)
 		{
-			if (abs(x) < 1.0e-3) x = 0.0f;
-			if (abs(y) < 1.0e-3) y = 0.0f;
+			if (abs(x) < 1.0e-3) x = 0.f;
+			if (abs(y) < 1.0e-3) y = 0.f;
+			// positions
 			positions[count + 0] = x;
 			positions[count + 1] = y;
 			positions[count + 2] = z;
-			positions[count + 3] = 0.0f;
-			positions[count + 4] = 0.0f;
-			positions[count + 5] = 0.0f;
+			// normals
+			positions[count + 3] = 0.f;
+			positions[count + 4] = 0.f;
+			positions[count + 5] = -1.f;
 			x += x_step;
 			count += 6;
 		}
@@ -180,10 +183,6 @@ int main(void)
 	if (glewInit() != GLEW_OK)
 		std::cout << "something went wrong :(" << std::endl;
 
-
-
-
-
 	// start
 	const auto a = 2 << 9;
 	const auto cols = a, rows = a;
@@ -215,23 +214,31 @@ int main(void)
 	// position
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, number_of_attribs * sizeof(float), 0);
 	glEnableVertexAttribArray(0);
-	// color
+	// normal
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, number_of_attribs * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
+	// light
+	glm::vec3 lightPos0(0.f, 0.f, 10.f);
 
 	// shader stuff
 	Shader shader = ReadShader("res/shaders/waterRippleShader.shader");
 	unsigned int program = CreateShader(shader.vertexShader, shader.fragmentShader);
 	glUseProgram(program);
 
+	// uniform locations
 	unsigned int tLocation = glGetUniformLocation(program, "t");
-	unsigned int viewLocation = glGetUniformLocation(program, "view");
+	unsigned int mvpLocation = glGetUniformLocation(program, "mvp");
+	unsigned int modelLocation = glGetUniformLocation(program, "model");
+	unsigned int lightPosLocation = glGetUniformLocation(program, "lightPos0");
+	unsigned int cameraPosLocation = glGetUniformLocation(program, "cameraPos");
+
+	glUniform3fv(lightPosLocation, 1, glm::value_ptr(lightPos0));
 
 	float t = 0.0f;
-	const float radius = 8;
+	const float radius = 3;
 	float phi = 0, theta = 0;
-	glm::mat4 perspective = glm::perspective(glm::radians(45.0f), width / height, 0.2f, 100.0f);
+	glm::mat4 perspective = glm::perspective(glm::radians(45.f), width / height, 0.1f, 1000.0f);
 	glm::vec3 up = glm::vec3(0, 1, 0);
 	glm::vec3 center = glm::vec3(0, 0, 0);
 
@@ -243,15 +250,18 @@ int main(void)
 		/* Render here */
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		//glm::vec3 position = glm::vec3(0, -3, 3);
 		double x = radius * cos(phi);
 		double z = radius * sin(phi);
+		//glm::vec3 position = glm::vec3(0, -3, 3);
 		glm::vec3 position = glm::vec3(x, -3, z);
-		glm::mat4 mvp = perspective * glm::lookAt(position, center, up);
+		glm::mat4 model = glm::lookAt(position, center, up);
+		glm::mat4 mvp = perspective * model;
 
 
 		glUniform1f(tLocation, t);
-		glUniformMatrix4fv(viewLocation, 1, GL_FALSE, &mvp[0][0]);
+		glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, &mvp[0][0]);
+		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, &model[0][0]);
+		glUniform3fv(cameraPosLocation, 1, glm::value_ptr(position));
 		t += 0.05f;
 		phi = lastX / width * (5 * 3.141592653589793f);
 		glDrawElements(GL_TRIANGLE_STRIP, number_of_indices, GL_UNSIGNED_INT, nullptr);
