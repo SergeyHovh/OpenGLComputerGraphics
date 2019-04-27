@@ -32,9 +32,9 @@ void main()
 		+ wave(1.0f, 1.0f, 0.5f, 0.5f, 0.0f)
 		+ wave(1.0f, 1.0f, -0.5f, 0.5f, 0.0f)
 		+ wave(1.0f, 1.0f, 0.5f, -0.5f, 0.0f)
-		+ wave(1.0f, 10.0f, 1.0f, 1.0f, 0.0f)
+		+ wave(1.0f, 10.0f, 1.0f, -1.0f, 0.0f)
 		;
-	z_coord /= 5;
+	z_coord /= 14;
 	float col = z_coord / 2 + 0.5f;
 	gl_Position = view * vec4(position.x, z_coord, position.y, position.w);
 	vertexColor = vec4(col, col, col, 1.0f);

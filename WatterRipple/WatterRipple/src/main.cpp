@@ -12,6 +12,11 @@
 #include <string>
 #include <vector>
 
+const float width = 1366.0f, height = 750.0f;
+
+bool firstMouse = true;
+float lastX = width / 2, lastY = height / 2;
+
 struct Shader
 {
 	const std::string vertexShader;
@@ -81,6 +86,19 @@ void generate_plane(const int cols, const int rows, float* positions, unsigned i
 	}
 }
 
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	lastX = xpos;
+	lastY = ypos;
+}
+
 /*reads shader from a file*/
 static Shader ReadShader(const std::string filepath)
 {
@@ -146,7 +164,6 @@ int main(void)
 	/* Initialize the library */
 	if (!glfwInit())
 		return -1;
-	const float width = 1360.0f, height = 750.0f;
 	/* Create a windowed mode window and its OpenGL context */
 	window = glfwCreateWindow(width, height, "Water Ripple Simulation", NULL, NULL);
 	if (!window)
@@ -157,6 +174,7 @@ int main(void)
 
 	/* Make the window's context current */
 	glfwMakeContextCurrent(window);
+	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSwapInterval(1);
 
 	if (glewInit() != GLEW_OK)
@@ -167,7 +185,7 @@ int main(void)
 
 
 	// start
-	const auto a = 2 << 8;
+	const auto a = 2 << 9;
 	const auto cols = a, rows = a;
 	const auto size = 2 * cols * (rows - 1) + 2 * (rows - 2);
 	const auto number_of_attribs = 6;
@@ -211,8 +229,8 @@ int main(void)
 	unsigned int viewLocation = glGetUniformLocation(program, "view");
 
 	float t = 0.0f;
-	const float radius = 3;
-	float angle = 0;
+	const float radius = 8;
+	float phi = 0, theta = 0;
 	glm::mat4 perspective = glm::perspective(glm::radians(45.0f), width / height, 0.2f, 100.0f);
 	glm::vec3 up = glm::vec3(0, 1, 0);
 	glm::vec3 center = glm::vec3(0, 0, 0);
@@ -225,15 +243,17 @@ int main(void)
 		/* Render here */
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glm::vec3 position = glm::vec3(0, -3, 3);
-		//glm::vec3 position = glm::vec3(radius * sin(angle), -5, radius * cos(angle));
+		//glm::vec3 position = glm::vec3(0, -3, 3);
+		double x = radius * cos(phi);
+		double z = radius * sin(phi);
+		glm::vec3 position = glm::vec3(x, -3, z);
 		glm::mat4 mvp = perspective * glm::lookAt(position, center, up);
 
 
 		glUniform1f(tLocation, t);
 		glUniformMatrix4fv(viewLocation, 1, GL_FALSE, &mvp[0][0]);
 		t += 0.05f;
-		//angle += 0.02f;
+		phi = lastX / width * (5 * 3.141592653589793f);
 		glDrawElements(GL_TRIANGLE_STRIP, number_of_indices, GL_UNSIGNED_INT, nullptr);
 
 		/* Swap front and back buffers */

@@ -21,6 +21,9 @@
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="res\shaders\waterRippleShader.shader" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D6FB10A0-3D2A-4F95-8D3C-4DCB8242D41D}</ProjectGuid>
     <RootNamespace>WatterRipple</RootNamespace>
